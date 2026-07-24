@@ -8,7 +8,8 @@
       "digestAlgorithm": "sha256",
       "wix": {
         "language": ["en-US"],
-        "template": "assets/main.wxs"
+        "template": "assets/main.wxs",
+        "manufacturer": "Pake Publisher"
       }
     }
   }
