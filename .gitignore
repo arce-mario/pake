@@ -1,0 +1,11 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+*.msi
+*.dmg
+*.deb
+*.AppImage
+*.log
+.DS_Store
+Thumbs.db
