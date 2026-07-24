@@ -39,7 +39,7 @@ pnpm run cli:build
 node dist/cli.js https://example.com --name MyApp --author "Your Name"
 ```
 
-Use `--author` to set the publisher name (appears in Windows MSI installer properties, avoiding "Unknown Publisher"). Use `--identifier` to set a custom bundle ID (e.g. `com.yourname.appname`).
+Use `--author "Your Name"` to set the publisher (appears as Manufacturer in Windows MSI properties, avoiding "Unknown Publisher"). Use `--identifier` to set a custom bundle ID (e.g. `com.yourname.appname`).
 
 ## Configuration
 

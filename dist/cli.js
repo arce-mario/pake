@@ -1009,15 +1009,15 @@ async function mergeConfig(url, options, tauriConf) {
         platform === 'linux'
             ? linuxBinaryName
             : `pake-${generateIdentifierSafeName(name)}`;
+    if (author) {
+        tauriConf.bundle.publisher = author;
+    }
     if (platform === 'win32') {
         const windowsBundle = tauriConf.bundle.windows;
         if (!windowsBundle) {
             throw new Error('Windows bundle configuration is missing from tauri.windows.conf.json; cannot build Windows target.');
         }
         windowsBundle.wix.language[0] = installerLanguage;
-        if (author) {
-            windowsBundle.wix.manufacturer = author;
-        }
     }
     await handleLocalFile(url, useLocalFile, tauriConf);
     const platformMap = {
@@ -3075,7 +3075,7 @@ ${green('|_|   \\__,_|_|\\_\\___|  can turn any webpage into a desktop app with 
         .argument('[url]', 'The web URL you want to package', validateUrlInput)
         .option('--name <string>', 'Application name')
         .addOption(new Option('--identifier <string>', 'Application identifier / bundle ID').hideHelp())
-        .addOption(new Option('--author <string>', 'Application author/publisher name (sets manufacturer in Windows MSI, avoiding "Unknown Publisher")').hideHelp())
+        .addOption(new Option('--author <string>', 'Application publisher name (sets Manufacturer in Windows MSI, avoiding "Unknown Publisher")').hideHelp())
         .option('--icon <string>', 'Application icon', DEFAULT_PAKE_OPTIONS.icon)
         .option('--width <number>', 'Window width', validateNumberInput, DEFAULT_PAKE_OPTIONS.width)
         .option('--height <number>', 'Window height', validateNumberInput, DEFAULT_PAKE_OPTIONS.height)
