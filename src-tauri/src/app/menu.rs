@@ -76,6 +76,14 @@ fn file_menu(app: &AppHandle<Wry>, allow_multi_window: bool) -> tauri::Result<Su
         true,
         Some("CmdOrCtrl+Shift+Backspace"),
     )?)?;
+    file_menu.append(&PredefinedMenuItem::separator(app)?)?;
+    file_menu.append(&MenuItem::with_id(
+        app,
+        "clear_notifications",
+        "Clear Notifications",
+        true,
+        None::<&str>,
+    )?)?;
     Ok(file_menu)
 }
 
@@ -302,6 +310,11 @@ pub fn handle_menu_click(app_handle: &AppHandle, id: &str) {
         "find_previous" => {
             if let Some(window) = app_handle.get_webview_window("pake") {
                 let _ = window.eval("window.pakeFind?.previous()");
+            }
+        }
+        "clear_notifications" => {
+            if let Some(window) = app_handle.get_webview_window("pake") {
+                let _ = window.eval("window.pakeMarkNotificationsRead?.()");
             }
         }
         "clear_cache_restart" => {

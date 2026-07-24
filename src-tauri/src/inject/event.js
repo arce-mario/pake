@@ -1261,10 +1261,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let permVal = "granted";
   let lastNotifTime = 0;
   let lastNotif = null;
-  // Pages that drive the badge directly via setAppBadge own its lifecycle;
-  // notifications-driven counts auto-clear on the next user interaction.
+  // Persistent unread notification count for the taskbar/dock badge.
+  // Only decremented when the user explicitly marks notifications as read
+  // (e.g., by focusing the window or via the "Clear Notifications" menu).
+  let unreadCount = 0;
+  // Pages that drive the badge directly via setAppBadge own its lifecycle
+  // and take precedence over the notification-driven count.
   let pageManagedBadge = false;
-  let autoBadgeActive = false;
 
   const normalizeBadgeCount = (count) => {
     if (typeof count !== "number" || !Number.isFinite(count)) {
@@ -1275,19 +1278,23 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const setBadge = (count) => {
     pageManagedBadge = true;
-    autoBadgeActive = false;
     return invoke("set_dock_badge", { count }).catch(() => {});
   };
   const clearBadge = () => invoke("clear_dock_badge").catch(() => {});
   const setLabel = (label) => {
     pageManagedBadge = true;
-    autoBadgeActive = false;
     return invoke("set_dock_badge_label", { label }).catch(() => {});
   };
-  const incrementAutoBadge = () => {
+
+  // Apply the persistent unread count to the badge. Does NOT set
+  // pageManagedBadge so the notification count and the Web Badging API
+  // remain independent.
+  const applyUnreadBadge = (count) => {
     if (pageManagedBadge) return Promise.resolve();
-    autoBadgeActive = true;
-    return invoke("increment_dock_badge").catch(() => {});
+    if (count > 0) {
+      return invoke("set_dock_badge", { count }).catch(() => {});
+    }
+    return invoke("clear_dock_badge").catch(() => {});
   };
 
   window.addEventListener("focus", () => {
@@ -1297,13 +1304,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const clearAutoBadge = () => {
-    if (pageManagedBadge || !autoBadgeActive) return;
-    autoBadgeActive = false;
+  // Mark all notifications as read and clear the badge.
+  // Called automatically on window focus, and exposed globally so the
+  // menu/tray "Clear Notifications" command can invoke it.
+  const markNotificationsRead = () => {
+    if (pageManagedBadge) return;
+    unreadCount = 0;
     clearBadge();
   };
-  document.addEventListener("click", clearAutoBadge, true);
-  document.addEventListener("keydown", clearAutoBadge, true);
+  window.pakeMarkNotificationsRead = markNotificationsRead;
+
+  // When the user brings the window to the foreground, clear the
+  // notification badge (the user has seen the app).
+  window.addEventListener("focus", () => {
+    markNotificationsRead();
+  });
 
   const wrappedNotification = function (title, options) {
     const body = options?.body || "";
@@ -1323,7 +1338,12 @@ document.addEventListener("DOMContentLoaded", () => {
     lastNotifTime = Date.now();
     lastNotif = notif;
     invoke("send_notification", { params: { title, body, icon } })
-      .then(() => incrementAutoBadge())
+      .then(() => {
+        if (!pageManagedBadge) {
+          unreadCount = Math.min(unreadCount + 1, 99999);
+          return applyUnreadBadge(unreadCount);
+        }
+      })
       .then(() => {
         if (notif.onshow) notif.onshow(new Event("show"));
       });
@@ -1361,14 +1381,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (normalized === null) {
       pageManagedBadge = false;
-      autoBadgeActive = false;
       return clearBadge();
     }
     return setBadge(normalized);
   };
   const clearAppBadge = () => {
     pageManagedBadge = false;
-    autoBadgeActive = false;
     return clearBadge();
   };
   try {

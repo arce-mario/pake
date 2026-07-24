@@ -26,17 +26,18 @@ pub fn set_system_tray(
     // must not share the "new_window" id with the app menu accelerator
     // (Cmd/Ctrl+N), or one click opens two windows.
     let new_window = MenuItemBuilder::with_id("tray_new_window", "New Window").build(app)?;
+    let clear_notifications = MenuItemBuilder::with_id("tray_clear_notifications", "Clear Notifications").build(app)?;
     let hide_app = MenuItemBuilder::with_id("hide_app", "Hide").build(app)?;
     let show_app = MenuItemBuilder::with_id("show_app", "Show").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
 
     let menu = if allow_multi_window {
         MenuBuilder::new(app)
-            .items(&[&new_window, &hide_app, &show_app, &quit])
+            .items(&[&new_window, &clear_notifications, &hide_app, &show_app, &quit])
             .build()?
     } else {
         MenuBuilder::new(app)
-            .items(&[&hide_app, &show_app, &quit])
+            .items(&[&clear_notifications, &hide_app, &show_app, &quit])
             .build()?
     };
 
@@ -47,6 +48,11 @@ pub fn set_system_tray(
         .on_menu_event(move |app, event| match event.id().as_ref() {
             "tray_new_window" => {
                 open_additional_window_safe(app);
+            }
+            "tray_clear_notifications" => {
+                if let Some(window) = app.get_webview_window("pake") {
+                    let _ = window.eval("window.pakeMarkNotificationsRead?.()");
+                }
             }
             "hide_app" => {
                 if let Some(window) = app.get_webview_window("pake") {
